@@ -27,7 +27,7 @@ void pageRank(Graph g, double* solution, double damping, double convergence)
     double sum_sinks = 0.0;
     double* score_new = new double[numNodes];
 
-    #pragma omp parallel for reduction(+:sum_sinks)
+    #pragma omp parallel for reduction(+:sum_sinks) if(omp_get_max_threads() > 1)
     for (int i = 0; i < numNodes; ++i) {
         solution[i] = equal_prob;
         if (outgoing_begin(g, i) == outgoing_end(g, i)) {
@@ -41,7 +41,7 @@ void pageRank(Graph g, double* solution, double damping, double convergence)
         double new_sum_sinks = 0.0;
 
         // compute score_new[vi] for all nodes vi:
-        #pragma omp parallel for reduction(+:global_diff, new_sum_sinks) schedule(dynamic, 16)
+        #pragma omp parallel for reduction(+:global_diff, new_sum_sinks) schedule(dynamic, 16) if(omp_get_max_threads() > 1)
         for (int i = 0; i < numNodes; i++) {
             score_new[i] = 0.0;
             // iterate through all incoming edges of node i
@@ -67,7 +67,6 @@ void pageRank(Graph g, double* solution, double damping, double convergence)
         // quit once algorithm has converged
         converged = (global_diff < convergence);
     }
-    delete[] score_new;
     
     /*
         CS149 students: Implement the page rank algorithm here.  You

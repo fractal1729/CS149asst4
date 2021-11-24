@@ -31,7 +31,11 @@ void top_down_step(
     vertex_set* new_frontier,
     int* distances)
 {
-
+    if (frontier->count == 0) {
+        return;
+    }
+    int next_dist = distances[frontier->vertices[0]] + 1;
+    #pragma omp parallel for if(omp_get_max_threads() > 1)
     for (int i=0; i<frontier->count; i++) {
 
         int node = frontier->vertices[i];
@@ -45,9 +49,15 @@ void top_down_step(
         for (int neighbor=start_edge; neighbor<end_edge; neighbor++) {
             int outgoing = g->outgoing_edges[neighbor];
 
-            if (distances[outgoing] == NOT_VISITED_MARKER) {
-                distances[outgoing] = distances[node] + 1;
-                int index = new_frontier->count++;
+            bool updated = __sync_bool_compare_and_swap(
+                &distances[outgoing],
+                NOT_VISITED_MARKER,
+                next_dist);
+            
+            if (updated) {
+                int index;
+                // #pragma omp atomic capture
+                index = new_frontier->count++;
                 new_frontier->vertices[index] = outgoing;
             }
         }
