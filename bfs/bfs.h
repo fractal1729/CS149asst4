@@ -19,7 +19,6 @@ struct vertex_set {
   int *vertices;
 };
 
-
 void bfs_top_down(Graph graph, solution* sol);
 void bfs_bottom_up(Graph graph, solution* sol);
 void bfs_hybrid(Graph graph, solution* sol);

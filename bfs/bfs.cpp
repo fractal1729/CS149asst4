@@ -5,6 +5,7 @@
 #include <string.h>
 #include <cstddef>
 #include <omp.h>
+#include <iostream>
 
 #include "../common/CycleTimer.h"
 #include "../common/graph.h"
@@ -35,7 +36,7 @@ void top_down_step(
         return;
     }
     int next_dist = distances[frontier->vertices[0]] + 1;
-    #pragma omp parallel for if(omp_get_max_threads() > 1)
+    #pragma omp parallel for schedule(dynamic, 128) if(omp_get_max_threads() > 1)
     for (int i=0; i<frontier->count; i++) {
 
         int node = frontier->vertices[i];
@@ -56,7 +57,7 @@ void top_down_step(
             
             if (updated) {
                 int index;
-                // #pragma omp atomic capture
+                #pragma omp atomic capture
                 index = new_frontier->count++;
                 new_frontier->vertices[index] = outgoing;
             }
@@ -108,6 +109,35 @@ void bfs_top_down(Graph graph, solution* sol) {
     }
 }
 
+int bottom_up_step(
+    Graph g,
+    int* distances,
+    int curr_dist)
+{
+    int new_frontier_size = 0;
+
+    #pragma omp parallel for reduction(+:new_frontier_size) schedule(dynamic, 128)
+    for (int i = 0; i < g->num_nodes; i++) {
+        // for each unvisited vertex, iterate through the incoming edges
+        // to see if any of them are in the frontier (i.e. sol
+        // dist is curr_dist; if so, add them to the new frontier
+        // (i.e. set sol dist to curr_dist + 1).
+        if (distances[i] != NOT_VISITED_MARKER)
+            continue;
+        const Vertex* inc_beg = incoming_begin(g, i);
+        const Vertex* inc_end = incoming_end(g, i);
+        for (const Vertex* u = inc_beg; u != inc_end; u++) {
+            if (distances[*u] == curr_dist) {
+                new_frontier_size++;
+                distances[i] = curr_dist + 1;
+                break;
+            }
+        }
+    }
+    return new_frontier_size;
+}
+
+
 void bfs_bottom_up(Graph graph, solution* sol)
 {
     // CS149 students:
@@ -121,6 +151,19 @@ void bfs_bottom_up(Graph graph, solution* sol)
     // As was done in the top-down case, you may wish to organize your
     // code by creating subroutine bottom_up_step() that is called in
     // each step of the BFS process.
+
+    for (int i = 0; i < graph->num_nodes; i++) {
+        sol->distances[i] = NOT_VISITED_MARKER;
+    }
+
+    int curr_dist = 0;
+    sol->distances[ROOT_NODE_ID] = 0;
+
+    while (true) {
+        int new_frontier_size = bottom_up_step(graph, sol->distances, curr_dist);
+        if (new_frontier_size == 0) break;
+        curr_dist++;
+    }
 }
 
 void bfs_hybrid(Graph graph, solution* sol)
@@ -129,4 +172,24 @@ void bfs_hybrid(Graph graph, solution* sol)
     //
     // You will need to implement the "hybrid" BFS here as
     // described in the handout.
+
+    // Top-down works better when frontier is a small fraction of the
+    // total number of nodes, and bottom-up works better when it is
+    // a larger fraction. So we can just monitor the ratio of frontier
+    // size to total number, and then when it is sufficiently high
+    // we use a bottom-up step or when it is low we use a top-down step.
+
+    threshold = 0.33;
+    for (int i = 0; i < graph->num_nodes; i++) {
+        sol->distances[i] = NOT_VISITED_MARKER;
+    }
+    int curr_dist = 0;
+    sol->distances[ROOT_NODE_ID] = 0;
+    
+
+    while(true) {
+        if ((float)frontier_size / (float)graph->num_nodes > threshold) {
+            
+        }
+    }
 }
