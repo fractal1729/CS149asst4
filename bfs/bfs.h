@@ -12,11 +12,13 @@ struct solution
 
 struct vertex_set {
   // # of vertices in the set
-  int count;
+  int total_count;
+  // # of vertices in each thread's set
+  int *counts;
   // max size of buffer vertices 
-  int max_vertices;
-  // array of vertex ids in set
-  int *vertices;
+  int max_vertices_per_thread;
+  // array of arrays of vertex ids
+  int **vertices;
 };
 
 void bfs_top_down(Graph graph, solution* sol);
