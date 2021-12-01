@@ -86,12 +86,14 @@ void top_down_step(
         for (int neighbor=start_edge; neighbor<end_edge; neighbor++) {
             int outgoing = g->outgoing_edges[neighbor];
 
-            bool updated = __sync_bool_compare_and_swap(
-                &distances[outgoing],
-                NOT_VISITED_MARKER,
-                next_dist);
+            // bool updated = __sync_bool_compare_and_swap(
+            //     &distances[outgoing],
+            //     NOT_VISITED_MARKER,
+            //     next_dist);
             
-            if (updated) {
+            // if (updated) {
+            if (distances[outgoing] == NOT_VISITED_MARKER) {
+                distances[outgoing] = next_dist;
                 int index = new_frontier->counts[thread_num]++;
                 new_frontier->vertices[thread_num][index] = outgoing;
             }
