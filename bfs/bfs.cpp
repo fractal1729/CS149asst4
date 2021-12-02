@@ -63,7 +63,7 @@ void top_down_step(
         return;
     }
     int next_dist = curr_dist + 1;
-    #pragma omp parallel for if(omp_get_max_threads() > 1) schedule(dynamic, 512)
+    #pragma omp parallel for if(omp_get_max_threads() > 1) schedule(dynamic)
     for (int i=0; i<frontier->total_count; i++) {
 
         // get slice
@@ -161,7 +161,7 @@ int bottom_up_step(
 {
     int new_frontier_size = 0;
 
-    #pragma omp parallel for reduction(+:new_frontier_size) schedule(dynamic, 512)
+    #pragma omp parallel for reduction(+:new_frontier_size) schedule(dynamic)
     for (int i = 0; i < g->num_nodes; i++) {
         // for each unvisited vertex, iterate through the incoming edges
         // to see if any of them are in the frontier (i.e. sol
