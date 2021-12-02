@@ -161,7 +161,7 @@ int bottom_up_step(
 {
     int new_frontier_size = 0;
 
-    #pragma omp parallel for reduction(+:new_frontier_size)
+    #pragma omp parallel for reduction(+:new_frontier_size) schedule(dynamic, 512)
     for (int i = 0; i < g->num_nodes; i++) {
         // for each unvisited vertex, iterate through the incoming edges
         // to see if any of them are in the frontier (i.e. sol
