@@ -63,7 +63,7 @@ void top_down_step(
         return;
     }
     int next_dist = curr_dist + 1;
-    #pragma omp parallel for if(omp_get_max_threads() > 1)
+    #pragma omp parallel for if(omp_get_max_threads() > 1) schedule(auto)
     for (int i=0; i<frontier->total_count; i++) {
 
         // get slice
