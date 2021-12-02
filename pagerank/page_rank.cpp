@@ -1,7 +1,7 @@
 #include "page_rank.h"
 
 #include <stdlib.h>
-#include <cmath>
+#include <math.h>
 #include <omp.h>
 #include <utility>
 
@@ -26,12 +26,12 @@ void pageRank(Graph g, double* solution, double damping, double convergence)
     double equal_prob = 1.0 / numNodes;
     double sum_sinks = 0.0;
     double* score_new = new double[numNodes];
-
+    double * score_old = new double[numNodes];
     #pragma omp parallel for reduction(+:sum_sinks) if(omp_get_max_threads() > 1)
     for (int i = 0; i < numNodes; ++i) {
-        solution[i] = equal_prob;
+        score_old[i] = equal_prob;
         if (outgoing_begin(g, i) == outgoing_end(g, i)) {
-            sum_sinks += solution[i];
+            sum_sinks += score_old[i];
         }
     }
 
@@ -48,26 +48,30 @@ void pageRank(Graph g, double* solution, double damping, double convergence)
             const Vertex* in_begin = incoming_begin(g, i);
             const Vertex* in_end = incoming_end(g, i);
             for (const Vertex* v = in_begin; v != in_end; ++v) {
-                score_new[i] += solution[*v] / outgoing_size(g, *v);
+                score_new[i] += score_old[*v] / outgoing_size(g, *v);
             }
-            score_new[i] = (damping * score_new[i]) + (1.0 - damping) * equal_prob;
-            score_new[i] += damping * sum_sinks * equal_prob;
+            score_new[i] = (damping * score_new[i]) + (1.0 - damping) /(numNodes);
+            score_new[i] += damping * sum_sinks / (numNodes);
             if (outgoing_size(g, i) == 0) {
                 new_sum_sinks += score_new[i];
             }
             // compute how much per-node scores have changed
-            global_diff += fabs(score_new[i] - solution[i]);
+            global_diff += fabs(score_new[i] - score_old[i]);
         }
 
         // update solution
-        std::swap(score_new, solution);
+        std::swap(score_new, score_old);
 
         sum_sinks = new_sum_sinks;
 
         // quit once algorithm has converged
         converged = (global_diff < convergence);
     }
-    
+    #pragma omp parallel for reduction(+:sum_sinks) if(omp_get_max_threads() > 1)
+    for (int i = 0; i < numNodes; ++i) {
+        solution[i] = score_old[i];
+    }
+
     /*
         CS149 students: Implement the page rank algorithm here.  You
         are expected to parallelize the algorithm using openMP.  Your
