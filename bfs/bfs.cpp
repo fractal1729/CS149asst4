@@ -159,7 +159,7 @@ int bottom_up_step(
     int* distances,
     int curr_dist)
 {
-    int[] new_frontier_sizes = new int[omp_get_max_threads()];
+    int new_frontier_sizes[omp_get_max_threads()];
     for (int i=0; i<omp_get_max_threads(); i++)
         new_frontier_sizes[i] = 0;
     #pragma omp parallel for schedule(dynamic, 512)
