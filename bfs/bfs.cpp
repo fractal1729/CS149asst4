@@ -173,7 +173,7 @@ int bottom_up_step(
         for (const Vertex* u = inc_beg; u != inc_end; u++) {
             if (distances[*u] == curr_dist) {
                 #pragma omp atomic
-                new_frontier_sizes++;
+                new_frontier_size++;
                 distances[i] = curr_dist + 1;
                 break;
             }
