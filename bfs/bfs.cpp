@@ -160,7 +160,8 @@ int bottom_up_step(
     int curr_dist)
 {
     int new_frontier_size = 0;
-    #pragma omp parallel for schedule(dynamic, 512)
+
+    #pragma omp parallel for reduction(+:new_frontier_size) schedule(dynamic, 512)
     for (int i = 0; i < g->num_nodes; i++) {
         // for each unvisited vertex, iterate through the incoming edges
         // to see if any of them are in the frontier (i.e. sol
@@ -172,7 +173,6 @@ int bottom_up_step(
         const Vertex* inc_end = incoming_end(g, i);
         for (const Vertex* u = inc_beg; u != inc_end; u++) {
             if (distances[*u] == curr_dist) {
-                #pragma omp atomic
                 new_frontier_size++;
                 distances[i] = curr_dist + 1;
                 break;
