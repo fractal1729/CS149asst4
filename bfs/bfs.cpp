@@ -159,9 +159,7 @@ int bottom_up_step(
     int* distances,
     int curr_dist)
 {
-    int new_frontier_sizes[omp_get_max_threads()];
-    for (int i=0; i<omp_get_max_threads(); i++)
-        new_frontier_sizes[i] = 0;
+    int new_frontier_size = 0;
     #pragma omp parallel for schedule(dynamic, 512)
     for (int i = 0; i < g->num_nodes; i++) {
         // for each unvisited vertex, iterate through the incoming edges
@@ -174,15 +172,12 @@ int bottom_up_step(
         const Vertex* inc_end = incoming_end(g, i);
         for (const Vertex* u = inc_beg; u != inc_end; u++) {
             if (distances[*u] == curr_dist) {
-                new_frontier_sizes[omp_get_thread_num()]++;
+                #pragma omp atomic
+                new_frontier_sizes++;
                 distances[i] = curr_dist + 1;
                 break;
             }
         }
-    }
-    int new_frontier_size = 0;
-    for (int i = 0; i < omp_get_max_threads(); i++) {
-        new_frontier_size += new_frontier_sizes[i];
     }
     return new_frontier_size;
 }
